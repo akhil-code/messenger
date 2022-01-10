@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Socket.IO chat</title>
+    </head>
+    <body>
+        <button id="connectButton">Connect to server</button>
+        <p id="socketStatus"></p>
+        <ul id="messages"></ul>
+        <form id="form" action="">
+            <input id="input" autocomplete="off" /><button>Send</button>
+        </form>
+        <div id="react-container"></div>
+        <script crossorigin src="https://unpkg.com/react@17/umd/react.production.min.js"></script>
+        <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script>
+        <script src="js/myReactComponent.js"></script>
+    </body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/socketHandler.js"></script>
+</html>
