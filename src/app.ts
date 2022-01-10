@@ -11,9 +11,11 @@ const httpServer = http.createServer(app)
 // web socket server
 const ioServer = createWebSocket(httpServer)
 
+
 const __dirname = path.resolve()
 app.set('views', path.join(__dirname, 'build/views'))
 app.set('view engine', 'ejs')
+// Path for static asseets like css & js.
 app.use(express.static(path.join(__dirname, 'build/public')))
 
 // web socket setup
@@ -28,5 +30,10 @@ ioServer.on("connection", socket => {
 app.get("/", (req, res) => {
     res.render('index')
 })
+
+// Ping request
+app.get("/ping", (req, res) => res.send({'message': "hello world"}))
+
+
 // http server is set to listen to traffic.
 httpServer.listen(port, () => console.log(`application running on port: ${port}`))
