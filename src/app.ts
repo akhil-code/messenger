@@ -1,39 +1,25 @@
-import express from "express"
-import * as http from "http"
-import path from "path"
-import { createWebSocket } from "./socketHandler.js"
+import express from "express";
+import * as http from "http";
+import * as socketHandler from "./socketHandler.js";
 
-const port = 5000
-const app = express()
+const port : string|number = process.env.PORT || 6000;
+const app = express();
 
 // http server is created out of express.
-const httpServer = http.createServer(app)
+const httpServer = http.createServer(app);
+
 // web socket server
-const ioServer = createWebSocket(httpServer)
+const ioServer = socketHandler.startSocketServer(httpServer);
 
-
-const __dirname = path.resolve()
-app.set('views', path.join(__dirname, 'build/views'))
-app.set('view engine', 'ejs')
-// Path for static asseets like css & js.
-app.use(express.static(path.join(__dirname, 'build/public')))
-
-// web socket setup
-ioServer.on("connection", socket => {
-    console.log(`A user connected with socketId: ${socket.id}`)
-    socket.on("chatMessage", msg => console.log(`message received: ${msg}`))
-    // disconnect event
-    socket.on('disconnect', () => `A user disconnected with socketId: ${socket.id}`)
+app.get('/ping', (req, res) => {
+    res.send("Healthy")
 })
 
-// web server setup
-app.get("/", (req, res) => {
-    res.render('index')
+app.get("/sockets", async (req, res) => {
+    res.send(await socketHandler.getAllSockets(ioServer))
 })
-
-// Ping request
-app.get("/ping", (req, res) => res.send({'message': "hello world"}))
-
 
 // http server is set to listen to traffic.
-httpServer.listen(port, () => console.log(`application running on port: ${port}`))
+httpServer.listen(port, () =>
+    console.log(`application running on port: ${port}`)
+);

@@ -1,0 +1,41 @@
+@startuml
+
+title Messenger LLD
+
+package messenger {
+    package service {
+        class ChatService {
+            + sendPrivateMessage(message: string, fromUserId: string, toUserId: string)
+            + sendPublicMessage(message: string, fromUserId: string, channelId: string)
+        }
+    }
+
+    package manager {
+        class PublicRoomManager {
+            + getAllRooms()
+            + addMemberToRoom(userId: string, channelId: string)
+            + removeMemberFromRoom(userId: string, channelId: string)
+        }
+
+        class PrivateRoomManager {
+            + initiatePrivateRoom(userId1: string, userId2: string)
+            + deletePrivateRoom(userId1: string, userId2: string)
+        }
+    }
+
+    package routes {
+        class MessengerRoutes {
+            + getChannel()
+            + login()
+        }
+    }
+
+    class App {
+        - messengerRoutes : MessengerRoutes
+    }
+
+    MessengerRoutes <-- App
+}
+
+
+@enduml

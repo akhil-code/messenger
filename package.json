@@ -9,10 +9,7 @@
   },
   "scripts": {
     "clean": "rimraf build/",
-    "build": "npm run clean && tsc && npm run copy-artefacts",
-    "copy-views": "fse copy src/views build/views",
-    "copy-public": "fse copy src/public build/public",
-    "copy-artefacts": "npm run copy-views && npm run copy-public",
+    "build": "npm run clean && tsc",
     "dev": "nodemon --watch src  -e ts,js,ejs,json --exec npm run start",
     "start": "npm run build && node build/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -38,6 +35,7 @@
     "typescript": "^4.5.4"
   },
   "dependencies": {
+    "@socket.io/admin-ui": "^0.2.0",
     "ejs": "^3.1.6",
     "express": "^4.17.2",
     "socket.io": "^4.4.1"
