@@ -17,7 +17,7 @@ export function startSocketServer(httpServer: http.Server) {
         SocketData
     >(httpServer, {
         cors: {
-            origin: "https://admin.socket.io",
+            origin: ["https://admin.socket.io", "http://quickdates.in"],
             credentials: true,
         },
     });

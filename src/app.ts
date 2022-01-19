@@ -1,8 +1,9 @@
 import express from "express";
 import * as http from "http";
 import * as socketHandler from "./socketHandler.js";
+import cors from 'cors';
 
-const port : string|number = process.env.PORT || 6000;
+const port : string|number = process.env.PORT || 3000;
 const app = express();
 
 // http server is created out of express.
@@ -15,7 +16,7 @@ app.get('/ping', (req, res) => {
     res.send("Healthy")
 })
 
-app.get("/sockets", async (req, res) => {
+app.get("/sockets", cors(), async (req, res) => {
     res.send(await socketHandler.getAllSockets(ioServer))
 })
 
