@@ -17,7 +17,7 @@ export function startSocketServer(httpServer: http.Server) {
         SocketData
     >(httpServer, {
         cors: {
-            origin: ["https://admin.socket.io", "http://quickdates.in"],
+            origin: ["https://admin.socket.io", "http://quickdates.in", "http://localhost:3001"],
             credentials: true,
         },
     });
@@ -30,18 +30,29 @@ export function startSocketServer(httpServer: http.Server) {
     return ioServer;
 }
 
+interface Message {
+    message: string,
+    sender: string
+}
+
+export let conversationList = new Array<Message>();
+
 const startEventListenerForSocketServer = (ioServer: IoServer) => {
     ioServer.on("connection", async (socket) => {
         // connection event
         console.log(`A user connected with socketId: ${socket.id}`);
         console.log(`Total active sockets: ${await getActiveSocketsLength(ioServer)}`, "\n")
 
-        socket.on('message', (msg) => {
+        socket.on('message', (msg: {message: string}) => {
             console.log(`${socket.id} : ${JSON.stringify(msg)}`)
-            ioServer.emit('conversationItem', {
+            
+            let event = {
                 ...msg,
                 sender: socket.id
-            })
+            }
+            conversationList = [...conversationList, event].slice(-10)
+
+            ioServer.emit('conversationItem', event);
         })
 
         // disconnect event

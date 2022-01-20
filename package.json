@@ -10,7 +10,8 @@
   "scripts": {
     "clean": "rimraf build/",
     "build": "npm run clean && tsc",
-    "dev": "nodemon --watch src  -e ts,js,ejs,json --exec npm run start",
+    "start-dev": "npm run build && node build/app.js",
+    "dev": "nodemon --watch src  -e ts,js,ejs,json --exec npm run start-dev",
     "start": "npm run build && pm2 start build/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
