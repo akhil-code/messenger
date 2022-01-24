@@ -1,0 +1,1 @@
+export const MAX_CONVERSATIONS_STORED_PER_CHANNEL: number = 10

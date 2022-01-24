@@ -1,28 +1,51 @@
 import express from "express";
 import * as http from "http";
-import * as socketHandler from "./socketHandler.js";
 import cors from "cors";
+import  * as channelCache from './cache/conversationCache.js';
+import SocketHandler from './handlers/socketHandler.js';
+import * as channelManager from './manager/channelManager.js'
+import * as locationManager from './manager/locationManager.js';
 
 const port: string | number = process.env.PORT || 3000;
 const app = express();
 
+// Enable CORS for all the requests.
+app.use(cors())
+app.use(express.json())
+
 // http server is created out of express.
 const httpServer = http.createServer(app);
 
-// web socket server
-const ioServer = socketHandler.startSocketServer(httpServer);
+// initiate socketIO server`
+const socketHandler = new SocketHandler(httpServer);
 
 app.get("/ping", (req, res) => {
     res.send("Healthy");
 });
 
-app.get("/chatHistory", cors(), (req, res) => {
-    res.send(socketHandler.conversationList);
+app.get("/chat-history", (req, res) => {
+    res.send(channelCache.getConversationOfChannel("/"))
 });
 
-app.get("/sockets", cors(), async (req, res) => {
-    res.send(await socketHandler.getAllSockets(ioServer));
+app.get("/online-users", async (req, res) => {
+    res.send((await socketHandler.getAllSockets()))
 });
+
+app.post('/create-channel', (req, res) => {
+    console.log(req.body)
+    channelManager.addChannel(req.body.channelName, req.body.location);
+    res.send(channelManager.getAllChannels())
+})
+
+app.get('/supported-channels', (req, res) => {
+    let channels = channelManager.getAllChannels()
+    res.send(Object.fromEntries(channels))
+})
+
+app.get('/supported-locations', (req, res) => {
+    res.send(locationManager.getAllSupportedLocations());
+})
+
 
 // http server is set to listen to traffic.
 httpServer.listen(port, () =>
