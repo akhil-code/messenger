@@ -1,4 +1,4 @@
-import { Message } from './Chat'
+import { Message } from './conversation'
 
 export interface ServerToClientEvents {
     groupMessage: (message: Message) => void;
@@ -12,9 +12,4 @@ export interface ClientToServerEvents {
 
 export interface InterServerEvents {
     ping: () => void;
-}
-
-export interface SocketData {
-    name: string;
-    age: number;
 }

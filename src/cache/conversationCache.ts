@@ -1,10 +1,10 @@
-import { Message } from '../types/Chat'
+import { Message } from '../types/conversation'
 
 /**
  * Key - channelId
  * Value - list of conversations with size limit of 10
  */
-const cachedConversations = new Map();
+const cachedConversations: Map<string, Array<Message>> = new Map();
 
 /**
  * Caches message added to a channel.

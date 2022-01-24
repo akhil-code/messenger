@@ -3,39 +3,153 @@
 title Messenger LLD
 
 package messenger {
-    package service {
-        class ChatService {
-            + sendPrivateMessage(message: string, fromUserId: string, toUserId: string)
-            + sendPublicMessage(message: string, fromUserId: string, channelId: string)
+
+    package cache {
+        class ConversationCache {
+            - cachedConversations: Map<string, Array<Message>>
+            + storeMessageOfChannel(channelId: string, message: Message, maxConversationsStore: number)
+            + getConversationOfChannel(channelId: string): Array<Message>
+        }
+
+        class UserCountCache {
+            - cachedUserCount: Map<location: string, count: number>
+            + incrementUserCountForLocation(location: string)
+            + decrementUserCountForLocation(location: string)
+        }
+    }
+
+    package handlers {
+        class SocketHandler {
+            + start(httpServer: http.server)
+            + getAllSockets()
+            - addAdminIOMiddleware()
+            - initEventListeners()
         }
     }
 
     package manager {
+        class ChatManager {
+            - socketHandler: SocketHandler
+            + sendPrivateMessage(message: string, fromUserId: string, toUserId: string)
+            + sendPublicMessage(message: string, fromUserId: string, channelId: string)
+        }
+
         class PublicRoomManager {
+            - socketHandler: SocketHandler
             + getAllRooms()
             + addMemberToRoom(userId: string, channelId: string)
             + removeMemberFromRoom(userId: string, channelId: string)
         }
 
         class PrivateRoomManager {
+            - socketHandler: SocketHandler
             + initiatePrivateRoom(userId1: string, userId2: string)
             + deletePrivateRoom(userId1: string, userId2: string)
         }
+
+        class ChannelManager {
+            - SUPPORTED_CHANNELS: Map<location: string, channelsList: List<string>>
+            + getAllChannels(): Map<location: string, channelsList: List<string>>
+            + addChannel(channelName: string, location: string)
+        }
+
+        class LocationManager {
+            - SUPPORTED_LOCATIONS: List<string>
+            + getAllSupportedLocations(): channels: List<string>
+        }
+
+        class UserManager {
+            - userCountCache: UserCountCache
+            + incrementUserCountForLocation(location: string)
+            + decrementUserCountForLocation(location: string)
+        }
+
+        class ConversationManager {
+            - conversationCache: ConversationCache
+            + storeMessageOfChannel(channelId: string, message: Message, maxConversationsStored: number)
+            + getConversationOfChannel(channelId: string)
+        }
     }
 
-    package routes {
-        class MessengerRoutes {
-            + getChannel()
-            + login()
+    package facade {
+        class MessengerFacade {
+            - chatManager: ChatManager
+            - privateRoomManager: PrivateRoomManager
+            - publicRoomManager: PublicRoomManager
+            - locationManager: LocationManager
+            - channelManager: ChannelManager
+            - conversationManager: ConversationManager
+            - userManager: UserManager
+
+
+            + getAllSupportedChannels()
+            + getAllSupportedLocations()
+            + getAllOnlineUsers(location: string)
+            + createChannel(channelName: string, location: string)
+            + getConversationOfChannel(channelId: string)
+            + getAllOnlineUsers(location: string)
+        }
+    }
+
+    package types {
+        package Conversation {
+            class Message {
+                sender: string
+                receiver: string
+                message: string
+            }
+        }
+
+        package SocketEventInterfaces {
+            class ServerToClientEvents {
+                + groupMessage(message: Message): void
+                + directMessage(message: Message): void
+            }
+
+            class ClientToServerEvents {
+                + groupMessage(message: Message): void
+                + directMessage(message: Message): void
+            }
+
+            class InterServerEvents {
+                + ping()
+            }
+
         }
     }
 
     class App {
-        - messengerRoutes : MessengerRoutes
+        - messengerFacade: MessengerFacade
+        + get(index)
+        + get(chat-history)
+        + get(online-users)
+        + get(supported-channels)
+        + get(supported-locations)
+        + post(create-channel)
     }
 
-    MessengerRoutes <-- App
-}
 
+    MessengerFacade <-- App
+
+    ChannelManager <-- MessengerFacade
+    LocationManager <-- MessengerFacade
+    UserManager <-- MessengerFacade
+    ConversationManager <-- MessengerFacade
+    ChatManager <-- MessengerFacade
+    PublicRoomManager <-- MessengerFacade
+    PrivateRoomManager <-- MessengerFacade
+
+    UserCountCache <-- UserManager
+    ConversationCache <-- ConversationManager
+
+    Message <-- SocketHandler
+    ClientToServerEvents <-- SocketHandler
+    ServerToClientEvents <-- SocketHandler
+    InterServerEvents <-- SocketHandler
+
+    SocketHandler <-- PrivateRoomManager
+    SocketHandler <-- PublicRoomManager
+    SocketHandler <-- ChatManager
+}
 
 @enduml

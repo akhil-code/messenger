@@ -1,2 +1,5 @@
 #### Overview
-![Overview](https://raw.githubusercontent.com/akhil-code/messenger/master/docs/Messenger.jpg?token=GHSAT0AAAAAABQL5NJY72JD4ZKQQSXQOXVKYOZWNNA)
+![Overview](https://github.com/akhil-code/messenger/blob/master/docs/Messenger.jpg)
+
+#### LLD - Class Diagram
+![LLD](https://github.com/akhil-code/messenger/blob/master/docs/lld.png)

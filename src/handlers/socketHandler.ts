@@ -1,31 +1,24 @@
 import { MAX_CONVERSATIONS_STORED_PER_CHANNEL } from "../constants/channelConstants.js";
-import { Server as IoServer, Socket } from "socket.io";
+import { Server as IoServer } from "socket.io";
 import * as http from "http";
 import { instrument } from "@socket.io/admin-ui";
 import * as conversationManager from "../cache/conversationCache.js";
 import * as socketConstants from "../constants/socketConstants.js";
-import { Message } from "../types/Chat";
-import {
-    ClientToServerEvents,
-    ServerToClientEvents,
-    InterServerEvents,
-    SocketData,
-} from "../types/SocketEventInterfaces";
+import { Message } from "../types/conversation";
+import { ClientToServerEvents, ServerToClientEvents, InterServerEvents, } from "../types/socketInterfaces";
 
 class SocketHandler {
     ioServer: IoServer<
         ClientToServerEvents,
         ServerToClientEvents,
-        InterServerEvents,
-        SocketData
+        InterServerEvents
     >;
 
     constructor(httpServer: http.Server) {
         this.ioServer = new IoServer<
             ClientToServerEvents,
             ServerToClientEvents,
-            InterServerEvents,
-            SocketData
+            InterServerEvents
         >(httpServer, {
             cors: {
                 origin: socketConstants.CORS_WHITELISTED_SITES,
@@ -42,8 +35,7 @@ class SocketHandler {
         const ioServer = new IoServer<
             ClientToServerEvents,
             ServerToClientEvents,
-            InterServerEvents,
-            SocketData
+            InterServerEvents
         >(httpServer, {
             cors: {
                 origin: socketConstants.CORS_WHITELISTED_SITES,
