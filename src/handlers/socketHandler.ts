@@ -77,6 +77,10 @@ class SocketHandler {
     getAllSockets = async () => {
         return (await this.io.fetchSockets()).map((socket) => socket.id);
     };
+
+    getSocketsInChannel = async (location: string, channelId: string) => {
+        return (await this.io.of(`/${location}`).in(channelId).fetchSockets()).map(socket => socket.id)
+    }
 }
 
 export default SocketHandler;

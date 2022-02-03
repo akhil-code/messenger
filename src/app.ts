@@ -1,4 +1,4 @@
-import express from "express";
+import express, { application } from "express";
 import * as http from "http";
 import cors from "cors";
 import  * as channelCache from './cache/conversationCache.js';
@@ -32,6 +32,15 @@ app.get("/chat-history", (req, res) => {
 app.get("/online-users", async (req, res) => {
     res.send((await socketHandler.getAllSockets()))
 });
+
+app.get("/online-users/:location/channel/:channelId", async (req, res) => {
+    let channelId = req.params.channelId
+    let location = req.params.location
+    console.log(`fetching ${location} users in a channel: ${channelId}`)
+
+    let response = await socketHandler.getSocketsInChannel(location, channelId)
+    res.send(response)
+})
 
 app.post('/create-channel', (req, res) => {
     console.log(req.body)
