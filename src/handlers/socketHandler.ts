@@ -5,7 +5,7 @@ import { instrument } from "@socket.io/admin-ui";
 import * as conversationManager from "../cache/conversationCache.js";
 import * as socketConstants from "../constants/socketConstants.js";
 import { Message } from "../types/conversation";
-import { ClientToServerEvents, ServerToClientEvents, InterServerEvents, } from "../types/socketInterfaces";
+import { ClientToServerEvents, ServerToClientEvents, InterServerEvents, } from "../types/socketEvents";
 import { getAllSupportedLocations } from "../manager/locationManager.js";
 
 class SocketHandler {
@@ -57,9 +57,13 @@ class SocketHandler {
                     socket.to(message.receiver).emit("directMessage", message);
                 });
     
-                socket.on('joinRoom', (location: string, roomName: string) => {
+                // todo: handle for user exiting the channel as well
+                socket.on('joinRoom', async (location: string, roomName: string) => {
                     console.log(`joining ${socket.id} to room: ${roomName}`)
+                    // emit to the channel that new user has joined
                     socket.join(roomName)
+                    regionalNamespace.to(roomName).emit('onlineUsersUpdate', 
+                        roomName, (await this.getSocketsInChannel(location, roomName)))
                 })
     
                 // disconnect event
