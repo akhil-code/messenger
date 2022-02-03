@@ -78,12 +78,23 @@ class SocketHandler {
         })
     }
 
-    getAllSockets = async () => {
-        return (await this.io.fetchSockets()).map((socket) => socket.id);
-    };
-
     getSocketsInChannel = async (location: string, channelId: string) => {
         return (await this.io.of(`/${location}`).in(channelId).fetchSockets()).map(socket => socket.id)
+    }
+
+    getOnlineUsersOfLocation = async (location: string) => {
+        return (await this.io.of(`/${location}`).fetchSockets()).map(socket => socket.id)
+    }
+
+    getAllOnlineUsers = async () => {
+        let supportedLocations = getAllSupportedLocations()
+        // key is location, value is list of users
+        let usersMap = new Map<string, Array<string>>();
+        await Promise.all(supportedLocations.map(async (location) => {
+            let users = await this.getOnlineUsersOfLocation(location)
+            usersMap.set(location, users)
+        }))
+        return usersMap;
     }
 }
 

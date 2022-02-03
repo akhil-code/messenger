@@ -1,18 +1,14 @@
+import { getAllSupportedLocations } from "./locationManager.js";
+
 
 const SUPPORTED_CHANNELS_MAP: Map<string, Array<string>> = new Map();
-
-SUPPORTED_CHANNELS_MAP.set('Bangalore', ["Dating", "Casual", "Dating"])
-SUPPORTED_CHANNELS_MAP.set('Mumbai', ["Dating"])
-SUPPORTED_CHANNELS_MAP.set('Chennai', ["Dating"])
+getAllSupportedLocations().forEach(location => SUPPORTED_CHANNELS_MAP.set(location, ['Dating', 'Casual']))
 
 export const getAllChannels = () => {
     return SUPPORTED_CHANNELS_MAP
 }
 
 export const addChannel = (newChannelName: string, location: string) => {
-
-    console.log(newChannelName, location)
-
     if(SUPPORTED_CHANNELS_MAP.has(location)) {
         let existingChannels = SUPPORTED_CHANNELS_MAP.get(location);
         existingChannels.forEach(existingChannel => {

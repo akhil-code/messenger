@@ -30,8 +30,14 @@ app.get("/chat-history", (req, res) => {
 });
 
 app.get("/online-users", async (req, res) => {
-    res.send((await socketHandler.getAllSockets()))
+    let usersMap = await socketHandler.getAllOnlineUsers()
+    res.send(Object.fromEntries(usersMap))
 });
+
+app.get('/online-users/:location', async (req, res) => {
+    let location = req.params.location;
+    res.send(await socketHandler.getOnlineUsersOfLocation(location))
+})
 
 app.get("/online-users/:location/channel/:channelId", async (req, res) => {
     let channelId = req.params.channelId
@@ -43,7 +49,6 @@ app.get("/online-users/:location/channel/:channelId", async (req, res) => {
 })
 
 app.post('/create-channel', (req, res) => {
-    console.log(req.body)
     channelManager.addChannel(req.body.channelName, req.body.location);
     res.send(channelManager.getAllChannels())
 })
