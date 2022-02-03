@@ -24,7 +24,9 @@ app.get("/ping", (req, res) => {
 });
 
 app.get("/chat-history", (req, res) => {
-    res.send(channelCache.getConversationOfChannel("/"))
+    let location = 'Bangalore'
+    let channelId = 'Dating'
+    res.send(channelCache.getConversationOfChannel(`${location}:${channelId}`))
 });
 
 app.get("/online-users", async (req, res) => {
