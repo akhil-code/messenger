@@ -2,7 +2,7 @@ import express, { application } from "express";
 import * as http from "http";
 import cors from "cors";
 import  * as channelCache from './cache/conversationCache.js';
-import SocketHandler from './handlers/socketHandler.js';
+import SocketHandler from './socket/socketHandler.js';
 import * as channelManager from './manager/channelManager.js'
 import * as locationManager from './manager/locationManager.js';
 
