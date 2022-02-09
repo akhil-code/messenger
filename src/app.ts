@@ -29,6 +29,11 @@ app.get("/chat-history", (req, res) => {
     res.send(channelCache.getConversationOfChannel(`${location}:${channelId}`))
 });
 
+app.get('/user/:userId', (req, res) => {
+    let userId = req.params.userId
+    res.send(socketHandler.getUser(userId))
+})
+
 app.get("/online-users", async (req, res) => {
     let usersMap = await socketHandler.getAllOnlineUsers()
     res.send(Object.fromEntries(usersMap))

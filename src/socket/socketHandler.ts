@@ -1,4 +1,5 @@
-import { Namespace, Server as IoServer, Socket } from "socket.io";
+import { User } from './../types/user';
+import { Server as IoServer } from "socket.io";
 import * as http from "http";
 import { instrument } from "@socket.io/admin-ui";
 import * as socketConstants from "../constants/socketConstants.js";
@@ -10,21 +11,18 @@ import {
 } from "../types/socketEvents";
 import { getAllSupportedLocations } from "../manager/locationManager.js";
 import * as callbacks from "./callbacks.js";
-import { v4 as uuidv4 } from 'uuid'
-import InMemorySessionStore from "../session/inMemorySessionStore.js";
-import { Session } from "../types/session.js";
-
+import SessionStore from "../datastore/sessionStore.js";
+import ISocket from '../types/iSocket';
+import { connectionMiddleware } from './connectionMiddleware.js'
+import MessageEvent from '../types/messageEvent';
 
 class SocketHandler {
     io: IoServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents>;
-    sessionStore = new InMemorySessionStore();
+    sessionStore: SessionStore;
 
     constructor(httpServer: http.Server) {
-        this.io = new IoServer<
-            ClientToServerEvents,
-            ServerToClientEvents,
-            InterServerEvents
-        >(httpServer, {
+        this.sessionStore = new SessionStore()
+        this.io = new IoServer<ClientToServerEvents,ServerToClientEvents,InterServerEvents>(httpServer, {
             cors: {
                 origin: socketConstants.CORS_WHITELISTED_SITES,
                 credentials: true,
@@ -39,50 +37,18 @@ class SocketHandler {
         instrument(this.io, { auth: false });
     };
 
-    setupLoginMiddleware = (namespace: Namespace) => {
-        namespace.use((socket: ISocket, next) => {
-            let inputSessionId = socket.handshake.auth.sessionId;
-            let session = this.sessionStore.findSession(inputSessionId)
-            if(session) {
-                socket.session = {
-                    sessionId: session.sessionId,
-                    userId: session.userId,
-                    username: session.username,
-                    location: session.location,
-                }
-                
-            } else {
-                let username = socket.handshake.auth.username;
-                let location = socket.handshake.auth.location;
-                let session = {
-                    userId: uuidv4(),
-                    sessionId: uuidv4(),
-                    username,
-                    location,
-                }
-                this.sessionStore.saveSession(session.sessionId, session)
-                socket.session = {...session}
-            }
-            next();
-        });
-    };
-
     setupEventListeners = () => {
         getAllSupportedLocations().forEach((location) => {
             let regionalNamespace = this.io.of(`/${location}`);
-            this.setupLoginMiddleware(regionalNamespace);
+            // middleware to check the necessary details.
+            connectionMiddleware(regionalNamespace, this.sessionStore)
 
             regionalNamespace.on("connection", async (socket: ISocket) => {
                 console.log(`user in ${location} connected with socket id: ${socket.id} \n`);
-                console.log(socket.session)
                 socket.emit('session', socket.session)
-
-                socket.on("groupMessage", (message: Message) =>
-                    callbacks.groupMessageCallback(message, regionalNamespace)
-                );
-                socket.on("directMessage", (message: Message) =>
-                    callbacks.directMessageCallback(message, regionalNamespace)
-                );
+                
+                socket.on("groupMessage", (message: Message) => callbacks.groupMessageCallback(message, regionalNamespace))
+                socket.on("directMessage", (messageEvent: MessageEvent) => callbacks.directMessageCallback(messageEvent, regionalNamespace))
                 socket.on(
                     "joinRoom",
                     async (location: string, roomName: string) =>
@@ -95,49 +61,56 @@ class SocketHandler {
                         )
                 );
                 // todo: handle for user exiting the channel as well
-                socket.on("disconnect", async () =>
-                    callbacks.disconnectionCallback(
-                        socket,
-                        location,
-                        this.getSocketsInLocation
-                    )
-                );
+                socket.on("disconnect", async () => callbacks.disconnectionCallback(socket, this.sessionStore))
             });
         });
     };
 
-    getSocketsInLocation = async (location: string) => {
+    getTotalSocketsInLocation = async (location: string) => {
         return (await this.io.of(`/${location}`).fetchSockets()).length;
     };
 
     getSocketsInChannel = async (location: string, channelId: string) => {
-        return (
-            await this.io.of(`/${location}`).in(channelId).fetchSockets()
-        ).map((socket) => socket.id);
+        return (await this.io.of(`/${location}`).in(channelId).fetchSockets()).map((socket) => socket.id)
     };
 
-    getOnlineUsersOfLocation = async (location: string) => {
-        return (await this.io.of(`/${location}`).fetchSockets()).map(
-            (socket) => socket.id
-        );
+    /**
+     * Returns all online users in a given location.
+     * @param location target location
+     * @returns Promise of list of users
+     */
+    getOnlineUsersOfLocation = async (location: string) : Promise<Array<User>> => {
+        let socketIds = (await this.io.of(`/${location}`).fetchSockets()).map((socket) => socket.id);
+        let res =  socketIds.map(socketId => {
+            let session = this.sessionStore.findUserByUserId(socketId)
+            return {
+                username: session?.username,
+                userId: session?.userId,
+            }
+        })
+        // console.log(socketIds, " -> ", res)
+        return res;
     };
 
     getAllOnlineUsers = async () => {
         let supportedLocations = getAllSupportedLocations();
         // key is location, value is list of users
-        let usersMap = new Map<string, Array<string>>();
+        let usersMap = new Map<string, Array<User>>();
         await Promise.all(
             supportedLocations.map(async (location) => {
                 let users = await this.getOnlineUsersOfLocation(location);
-                usersMap.set(location, users);
+                usersMap.set(location, [...users]);
             })
         );
+        // console.log(usersMap)
         return usersMap;
     };
+
+    getUser = (userId: string) => {
+        return this.sessionStore.findUserByUserId(userId)
+    }
 }
 
-interface ISocket extends Socket {
-    session?: Session;
-}
+
 
 export default SocketHandler;

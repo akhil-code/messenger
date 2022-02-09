@@ -1,7 +1,9 @@
+import SessionStore from '../datastore/sessionStore.js';
 import { Namespace, Server as IoServer, Socket } from "socket.io";
 import { Message } from "../types/conversation";
 import * as conversationManager from "../cache/conversationCache.js";
 import { MAX_CONVERSATIONS_STORED_PER_CHANNEL as maxMessages } from "../constants/channelConstants.js";
+import MessageEvent from '../types/messageEvent.js';
 
 export const groupMessageCallback = (
     message: Message,
@@ -17,11 +19,11 @@ export const groupMessageCallback = (
 };
 
 export const directMessageCallback = (
-    message: Message,
+    messageEvent: MessageEvent,
     regionalNamespace: Namespace
 ) => {
-    console.log("directMessage: ", message);
-    regionalNamespace.to(message.receiver).emit("directMessage", message);
+    console.log("directMessage: ", messageEvent);
+    regionalNamespace.to(messageEvent.receiver.userId).emit("directMessage", messageEvent);
 };
 
 export const joinRoomCallback = async (
@@ -46,11 +48,6 @@ export const joinRoomCallback = async (
         );
 };
 
-export const disconnectionCallback = async (
-    socket: Socket,
-    location: string,
-    getSocketsInLocation: (location: string) => Promise<number>
-) => {
+export const disconnectionCallback = async (socket: Socket, sessionStore: SessionStore) => {
     console.log(`A user disconnected with socketId: ${socket.id}`);
-    console.log(`Connections left in ${location}: ${await getSocketsInLocation(location)}`);
 };
