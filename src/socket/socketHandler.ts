@@ -1,4 +1,4 @@
-import { Server as IoServer } from "socket.io";
+import { Namespace, Server as IoServer, Socket } from "socket.io";
 import * as http from "http";
 import { instrument } from "@socket.io/admin-ui";
 import * as socketConstants from "../constants/socketConstants.js";
@@ -10,9 +10,14 @@ import {
 } from "../types/socketEvents";
 import { getAllSupportedLocations } from "../manager/locationManager.js";
 import * as callbacks from "./callbacks.js";
+import { v4 as uuidv4 } from 'uuid'
+import InMemorySessionStore from "../session/inMemorySessionStore.js";
+import { Session } from "../types/session.js";
+
 
 class SocketHandler {
     io: IoServer<ClientToServerEvents, ServerToClientEvents, InterServerEvents>;
+    sessionStore = new InMemorySessionStore();
 
     constructor(httpServer: http.Server) {
         this.io = new IoServer<
@@ -34,14 +39,44 @@ class SocketHandler {
         instrument(this.io, { auth: false });
     };
 
+    setupLoginMiddleware = (namespace: Namespace) => {
+        namespace.use((socket: ISocket, next) => {
+            let inputSessionId = socket.handshake.auth.sessionId;
+            let session = this.sessionStore.findSession(inputSessionId)
+            if(session) {
+                socket.session = {
+                    sessionId: session.sessionId,
+                    userId: session.userId,
+                    username: session.username,
+                    location: session.location,
+                }
+                
+            } else {
+                let username = socket.handshake.auth.username;
+                let location = socket.handshake.auth.location;
+                let session = {
+                    userId: uuidv4(),
+                    sessionId: uuidv4(),
+                    username,
+                    location,
+                }
+                this.sessionStore.saveSession(session.sessionId, session)
+                socket.session = {...session}
+            }
+            next();
+        });
+    };
+
     setupEventListeners = () => {
         getAllSupportedLocations().forEach((location) => {
             let regionalNamespace = this.io.of(`/${location}`);
+            this.setupLoginMiddleware(regionalNamespace);
 
-            regionalNamespace.on("connection", async (socket) => {
-                console.log(
-                    `user in ${location} connected with socket id: ${socket.id} \n`
-                );
+            regionalNamespace.on("connection", async (socket: ISocket) => {
+                console.log(`user in ${location} connected with socket id: ${socket.id} \n`);
+                console.log(socket.session)
+                socket.emit('session', socket.session)
+
                 socket.on("groupMessage", (message: Message) =>
                     callbacks.groupMessageCallback(message, regionalNamespace)
                 );
@@ -99,6 +134,10 @@ class SocketHandler {
         );
         return usersMap;
     };
+}
+
+interface ISocket extends Socket {
+    session?: Session;
 }
 
 export default SocketHandler;
